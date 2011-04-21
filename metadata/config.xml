@@ -6,7 +6,7 @@
 	<!-- Basic Module Properties -->
 	<id>rgccd</id>
 	<name>RG CCD</name>
-	<version>1.0.3</version>
+	<version>1.0.4</version>
 	<package>org.openmrs.module.@MODULE_ID@</package>
 	<author>Vibha Anand</author>
 	<description>
