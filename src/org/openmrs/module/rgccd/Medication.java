@@ -39,6 +39,7 @@ public class Medication {
 	private String rxNormName = null;
 	private String originalText = null;
 	private String sig = null;
+	private String strength = null;
 	
 	public Medication(){
 		
@@ -57,6 +58,7 @@ public class Medication {
 		this.rxNormName = medication.getRxNormName();
 		this.originalText = medication.getOriginalText();
 		this.sig = medication.getSig();
+		this.strength = medication.getStrength();
 	}
 	
     /**
@@ -269,6 +271,24 @@ public class Medication {
      */
     public void setSig(String sig) {
     	this.sig = sig;
+    }
+
+
+	
+    /**
+     * @return the strength
+     */
+    public String getStrength() {
+    	return this.strength;
+    }
+
+
+	
+    /**
+     * @param strength the strength to set
+     */
+    public void setStrength(String strength) {
+    	this.strength = strength;
     }
    
 }

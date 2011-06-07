@@ -253,6 +253,7 @@ public class CcdServiceImpl implements CcdService {
 					
 					if (currChild.getNodeType() == Node.ELEMENT_NODE) {
 						Element childElement = (Element) currChild;
+						//Set the medication names
 						if (childElement.getNodeName().equals("consumable")) {
 							
 							NodeList children2 = currChild.getChildNodes();
@@ -363,8 +364,9 @@ public class CcdServiceImpl implements CcdService {
 												currChild = children3.item(l);
 												if (currChild.getNodeType() == Node.ELEMENT_NODE) {
 													childElement = (Element) currChild;
+													//set the quantity and units
 													if (childElement.getNodeName().equals("quantity")) {
-														drug.setQuantity(childElement.getAttribute("value"));
+														
 														drug.setUnits(childElement.getAttribute("unit"));
 													}
 													if (childElement.getNodeName().equals("author")) {
@@ -381,6 +383,7 @@ public class CcdServiceImpl implements CcdService {
 																		currChild = children5.item(n);
 																		if (currChild.getNodeType() == Node.ELEMENT_NODE) {
 																			childElement = (Element) currChild;
+																			//set the prescriber number
 																			if (childElement.getNodeName().equals("id")) {
 																				drug.setPrescriberNumber(childElement
 																				        .getAttribute("extension"));
@@ -405,6 +408,7 @@ public class CcdServiceImpl implements CcdService {
 																								        .item(p);
 																								if (currChild.getNodeType() == Node.ELEMENT_NODE) {
 																									childElement = (Element) currChild;
+																									//set the prescriber name
 																									if (childElement
 																									        .getNodeName()
 																									        .equals("given")) {
@@ -439,6 +443,7 @@ public class CcdServiceImpl implements CcdService {
 									}
 								}
 							}
+							//set the dispense date
 							if (childElement.getAttribute("typeCode").equals("COMP")) {
 								NodeList children2 = currChild.getChildNodes();
 								
@@ -462,6 +467,7 @@ public class CcdServiceImpl implements CcdService {
 									}
 								}
 							}
+							//set the sig
 							if (childElement.getAttribute("typeCode").equals("SUBJ")) {
 								NodeList children2 = currChild.getChildNodes();
 								
@@ -500,6 +506,160 @@ public class CcdServiceImpl implements CcdService {
 							
 						}
 					}
+				}
+			}
+			//set the supply for each medication
+			NodeList sections = doc.getElementsByTagName("section");
+			Node targetSection = null;
+			//find the Medications table section
+			for (int i = 0; i < sections.getLength(); i++) {
+				
+				Node currChild = sections.item(i);
+				
+				NodeList children1 = currChild.getChildNodes();
+				
+				for (int j = 0; j < children1.getLength(); j++) {
+					currChild = children1.item(j);
+					
+					if (currChild.getNodeType() == Node.ELEMENT_NODE) {
+						Element childElement = (Element) currChild;
+						
+						if (childElement.getNodeName().equals("title")&&
+								childElement.getTextContent().equals("Medications")) {
+							targetSection=sections.item(i);
+							break;
+						}
+					}
+				}
+			}
+			if (targetSection != null) {
+				//find the text tag in the target section
+				NodeList children1 = targetSection.getChildNodes();
+				for (int j = 0; j < children1.getLength(); j++) {
+					Node currChild = children1.item(j);
+					
+					if (currChild.getNodeType() == Node.ELEMENT_NODE) {
+						Element childElement = (Element) currChild;
+						
+						if (childElement.getNodeName().equals("text")) {
+							targetSection = currChild;
+							break;
+						}
+					}
+					
+				}
+				//find the table tag in the target section
+				children1 = targetSection.getChildNodes();
+				for (int j = 0; j < children1.getLength(); j++) {
+					Node currChild = children1.item(j);
+					
+					if (currChild.getNodeType() == Node.ELEMENT_NODE) {
+						Element childElement = (Element) currChild;
+						
+						if (childElement.getNodeName().equals("table")) {
+							targetSection = currChild;
+							break;
+						}
+					}
+					
+				}
+				//find the table tag in the target section
+				children1 = targetSection.getChildNodes();
+				for (int j = 0; j < children1.getLength(); j++) {
+					Node currChild = children1.item(j);
+					
+					if (currChild.getNodeType() == Node.ELEMENT_NODE) {
+						Element childElement = (Element) currChild;
+						
+						if (childElement.getNodeName().equals("tbody")) {
+							targetSection = currChild;
+							break;
+						}
+					}
+					
+				}
+				Node tbodySection = targetSection;
+				//look through the tbody rows to find the row for the correct medication
+				children1 = tbodySection.getChildNodes();
+				for (int j = 0; j < children1.getLength(); j++) {
+					Node currChild = children1.item(j);
+					
+					if (currChild.getNodeType() == Node.ELEMENT_NODE) {
+						Element childElement = (Element) currChild;
+						
+						if (childElement.getNodeName().equals("tr")) {
+							NodeList children2 = currChild.getChildNodes();
+							String drugName = null;
+							String strength = null;
+							String quantity = null;
+							String dispenseDate = null;
+							for (int k = 0; k < children2.getLength(); k++) {
+								currChild = children2.item(k);
+								if (currChild.getNodeType() == Node.ELEMENT_NODE) {
+									childElement = (Element) currChild;
+									
+									if (childElement.getNodeName().equals("td")) {
+										NodeList children3 = currChild.getChildNodes();
+										
+										for (int l = 0; l < children3.getLength(); l++) {
+											currChild = children3.item(l);
+											
+											if (currChild.getNodeType() == Node.ELEMENT_NODE) {
+												childElement = (Element) currChild;
+												
+												if (childElement.getNodeName().equals("content")
+												        && childElement.getAttribute("ID").startsWith("Medications-drug")) {
+													
+													drugName = childElement.getTextContent();
+												}
+												if (childElement.getNodeName().equals("content")
+												        && childElement.getAttribute("ID").startsWith("Medications-dispense-date")) {
+													
+													dispenseDate = childElement.getTextContent();
+												}
+												if (childElement.getNodeName().equals("content")
+												        && childElement.getAttribute("ID")
+												                .startsWith("Medications-strength")) {
+													strength = childElement.getTextContent();
+												}
+												if (childElement.getNodeName().equals("content")
+												        && childElement.getAttribute("ID")
+												                .startsWith("Medications-quantity")) {
+													quantity = childElement.getTextContent();
+												}
+											}
+										}
+
+									}
+								}
+							}
+							String pattern = "dd-MMM-yyyy";
+
+							SimpleDateFormat dateForm = new SimpleDateFormat(pattern);
+							
+							for (Medication currDrug : drugs) {
+								if (currDrug.getRegenstriefName()!=null&&
+										currDrug.getRegenstriefName().equalsIgnoreCase(drugName)&&
+										dateForm.format(currDrug.getDispenseDate()).equals(dispenseDate)) {
+									if(currDrug.getStrength() == null || currDrug.getQuantity() == null){
+										currDrug.setStrength(strength);
+										currDrug.setQuantity(quantity);
+										break;
+									}
+								}
+								if (currDrug.getNdcName()!=null&&
+										currDrug.getNdcName().equalsIgnoreCase(drugName)&&
+										dateForm.format(currDrug.getDispenseDate()).equals(dispenseDate)) {
+									if(currDrug.getStrength() == null || currDrug.getQuantity() == null){
+										currDrug.setStrength(strength);
+										currDrug.setQuantity(quantity);
+										break;
+									}
+								}
+							}
+						}
+					}
+					
 				}
 			}
 		}
@@ -552,7 +712,9 @@ public class CcdServiceImpl implements CcdService {
 					dispenseDateString = formatter.format(drug.getDispenseDate());
 				}
 				buf.append("Dispense date: " + dispenseDateString + "\n");
-				buf.append("Sig: "+drug.getSig()+"\n\n");
+				buf.append("Sig: "+drug.getSig()+"\n");
+				buf.append("Quantity: "+drug.getQuantity()+"\n");
+				buf.append("Strength: "+drug.getStrength()+"\n\n");
 			}
 		}
 		log.info(buf.toString());
