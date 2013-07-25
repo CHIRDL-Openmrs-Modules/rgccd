@@ -5,14 +5,12 @@ import java.util.List;
 
 import org.apache.axis2.AxisFault;
 import org.openmrs.module.rgccd.Medication;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * CCD related services
  * 
  * @author Vibha Anand
  */
-@Transactional
 public interface CcdService
 {
 	public String getCcdByMRN(String mrn, String providerId,Integer locationId) throws AxisFault,RemoteException;

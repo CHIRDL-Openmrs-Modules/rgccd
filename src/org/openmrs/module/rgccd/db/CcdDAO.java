@@ -1,5 +1,7 @@
 package org.openmrs.module.rgccd.db;
 
+import org.springframework.transaction.annotation.Transactional;
+
 
 
 /**
@@ -7,6 +9,7 @@ package org.openmrs.module.rgccd.db;
  * 
  * @author Vibha Anand
  */
+@Transactional
 public interface CcdDAO {
 
 }
