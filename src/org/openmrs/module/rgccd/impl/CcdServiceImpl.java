@@ -17,13 +17,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.rgccd.MedicationListComparator;
-import org.openmrs.module.chirdlutil.hibernateBeans.LocationAttributeValue;
-import org.openmrs.module.chirdlutil.service.ChirdlUtilService;
 import org.openmrs.module.chirdlutil.util.IOUtil;
 import org.openmrs.module.chirdlutil.util.Util;
 import org.openmrs.module.chirdlutil.util.XMLUtil;
+import org.openmrs.module.chirdlutilbackports.hibernateBeans.LocationAttributeValue;
+import org.openmrs.module.chirdlutilbackports.service.ChirdlUtilBackportsService;
 import org.openmrs.module.rgccd.Medication;
+import org.openmrs.module.rgccd.MedicationListComparator;
 import org.openmrs.module.rgccd.db.CcdDAO;
 import org.openmrs.module.rgccd.service.CcdService;
 import org.regenstrief.www.services.HL7CcdServiceStub;
@@ -81,8 +81,8 @@ public class CcdServiceImpl implements CcdService {
 		AdministrationService as = Context.getAdministrationService();
 		
 		// Set username and password
-		ChirdlUtilService chirdlUtilService = Context.getService(ChirdlUtilService.class);
-		LocationAttributeValue locAttrValue = chirdlUtilService.getLocationAttributeValue(locationId,
+		ChirdlUtilBackportsService chirdlUtilBackportsService = Context.getService(ChirdlUtilBackportsService.class);
+		LocationAttributeValue locAttrValue = chirdlUtilBackportsService.getLocationAttributeValue(locationId,
 		    "medicationListQueryUser");
 		if (locAttrValue != null) {
 			username = locAttrValue.getValue();
@@ -93,13 +93,8 @@ public class CcdServiceImpl implements CcdService {
 			return null;
 		}
 		String passWord = as.getGlobalProperty("rgccd.password");
-		String trustStore = as.getGlobalProperty("rgccd.truststore");
-		String trustStorePassword = as.getGlobalProperty("rgccd.truststorepassword");
 		
 		// Invoke service
-		System.setProperty("javax.net.ssl.trustStore", trustStore);
-		System.setProperty("javax.net.ssl.trustStorePassword", trustStorePassword);
-		
 		if (providerId == null) {
 			log.info("Could not query medication list for mrn: " + mrn + " because provider ID is null");
 			return null;
@@ -107,8 +102,15 @@ public class CcdServiceImpl implements CcdService {
 		
 		providerId = Util.removeLeadingZeros(providerId); //remove trailing zeros because regenstrief ids don't have them
 		
+		String mrnCcdServiceUrl = as.getGlobalProperty("rgccd.mrnServiceUrl");
+		if (mrnCcdServiceUrl == null) {
+			log.error("No value found for global property rgccd.mrnServiceUrl");
+			return null;
+		}
+		
 		//call the ccd service
-		MRNCcdServiceStub stub = new MRNCcdServiceStub("https://phoenix.regenstrief.org:8443/NHIN/services/MRNRequestForCCD");
+//		MRNCcdServiceStub stub = new MRNCcdServiceStub("https://phoenix.regenstrief.org:8443/NHIN/services/MRNRequestForCCD");
+		MRNCcdServiceStub stub = new MRNCcdServiceStub(mrnCcdServiceUrl);
 		
 		MRNCcdServiceStub.GetCcd getCcd = new MRNCcdServiceStub.GetCcd();
 		MRNCcdServiceStub.GetCcdE req = new MRNCcdServiceStub.GetCcdE();
@@ -160,8 +162,8 @@ public class CcdServiceImpl implements CcdService {
 		AdministrationService as = Context.getAdministrationService();
 		
 		// Set username and password
-		ChirdlUtilService chirdlUtilService = Context.getService(ChirdlUtilService.class);
-		LocationAttributeValue locAttrValue = chirdlUtilService.getLocationAttributeValue(locationId,
+		ChirdlUtilBackportsService chirdlUtilBackportsService = Context.getService(ChirdlUtilBackportsService.class);
+		LocationAttributeValue locAttrValue = chirdlUtilBackportsService.getLocationAttributeValue(locationId,
 		    "medicationListQueryUser");
 		if (locAttrValue != null) {
 			username = locAttrValue.getValue();
@@ -172,14 +174,16 @@ public class CcdServiceImpl implements CcdService {
 			return null;
 		}
 		String passWord = as.getGlobalProperty("rgccd.password");
-		String trustStore = as.getGlobalProperty("rgccd.truststore");
-		String trustStorePassword = as.getGlobalProperty("rgccd.truststorepassword");
 		
-		System.setProperty("javax.net.ssl.trustStore", trustStore);
-		System.setProperty("javax.net.ssl.trustStorePassword", trustStorePassword);
+		String hl7CcdServiceUrl = as.getGlobalProperty("rgccd.hl7ServiceUrl");
+		if (hl7CcdServiceUrl == null) {
+			log.error("No value found for global property rgccd.hl7ServiceUrl");
+			return null;
+		}
 		
 		//call the ccd service
-		HL7CcdServiceStub stub = new HL7CcdServiceStub("https://phoenix.regenstrief.org:8443/NHIN/services/getCcd");
+//		HL7CcdServiceStub stub = new HL7CcdServiceStub("https://phoenix.regenstrief.org:8443/NHIN/services/getCcd");
+		HL7CcdServiceStub stub = new HL7CcdServiceStub(hl7CcdServiceUrl);
 		
 		HL7CcdServiceStub.GetCcd getCcd = new HL7CcdServiceStub.GetCcd();
 		HL7CcdServiceStub.GetCcdE req = new HL7CcdServiceStub.GetCcdE();
@@ -460,6 +464,9 @@ public class CcdServiceImpl implements CcdService {
 													childElement = (Element) currChild;
 													if (childElement.getNodeName().equals("effectiveTime")) {
 														drug.setDispenseDate(childElement.getAttribute("value"));
+													} else if (childElement.getNodeName().equals("quantity")) {
+														drug.setQuantity(childElement.getAttribute("value"));
+														drug.setUnits(childElement.getAttribute("unit"));
 													}
 												}
 											}
@@ -503,7 +510,6 @@ public class CcdServiceImpl implements CcdService {
 									}
 								}
 							}
-							
 						}
 					}
 				}
@@ -664,13 +670,12 @@ public class CcdServiceImpl implements CcdService {
 			}
 		}
 		catch (Exception e) {
-			e.printStackTrace();
+			log.error("Error parsing CCD for Medications", e);
 		}
 		
 		if (drugs.size() == 0) {
 			log.info("No medications found for mrn: " + mrn);
 		} else {
-			
 			printMeds(drugs,mrn);
 		}
 		
@@ -713,7 +718,13 @@ public class CcdServiceImpl implements CcdService {
 				}
 				buf.append("Dispense date: " + dispenseDateString + "\n");
 				buf.append("Sig: "+drug.getSig()+"\n");
-				buf.append("Quantity: "+drug.getQuantity()+"\n");
+				buf.append("Quantity: "+drug.getQuantity());
+				String units = drug.getUnits();
+				if (units != null && units.trim().length() > 0) {
+					buf.append(" " + units);
+				}
+				
+				buf.append("\n");
 				buf.append("Strength: "+drug.getStrength()+"\n\n");
 			}
 		}

@@ -139,8 +139,19 @@ public class Medication {
     
     //code adapted from http://download.oracle.com/javase/6/docs/technotes/guides/jmx/examples/Lookup/ldap/Client.java
 	public static Date getLocalDate(String dateString) throws java.text.ParseException {
+		if (dateString == null || dateString.trim().length() == 0) {
+			return null;
+		}
+		
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss.S");
-		Date localDate = formatter.parse(dateString);
+		Date localDate = null;
+		try {
+			localDate = formatter.parse(dateString);
+		} catch (java.text.ParseException e) {
+			formatter = new SimpleDateFormat("yyyyMMdd");
+			localDate = formatter.parse(dateString);
+		}
+		
 		if (dateString.endsWith("Z")) {
 			Date date = new Date();
 			if (formatter.getCalendar().getTimeZone().inDaylightTime(date))

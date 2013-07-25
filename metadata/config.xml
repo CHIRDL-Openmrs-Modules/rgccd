@@ -6,7 +6,7 @@
 	<!-- Basic Module Properties -->
 	<id>rgccd</id>
 	<name>RG CCD</name>
-	<version>1.0.5</version>
+	<version>1.1.1</version>
 	<package>org.openmrs.module.@MODULE_ID@</package>
 	<author>Vibha Anand</author>
 	<description>
@@ -19,7 +19,8 @@
 	<require_version>1.0.0</require_version>
 	<require_database_version>1.0.0</require_database_version>
 	<require_modules>
-   		<require_module version="1.0.11">org.openmrs.module.chirdlutil</require_module>
+   		<require_module version="1.0.22">org.openmrs.module.chirdlutil</require_module>
+		<require_module version="1.0.0">org.openmrs.module.chirdlutilbackports</require_module>
 	</require_modules>
 
 	
@@ -47,22 +48,22 @@
 	</globalProperty>
 	
 	<globalProperty>
-		<property>rgccd.truststore</property>
-   		<description>trust store where RG CCD certificate is
-   		</description>
-	</globalProperty>
-	
-	<globalProperty>
-		<property>rgccd.truststorepassword</property>
-   		<description>password for trust store
-   		</description>
-	</globalProperty>
-	
-	<globalProperty>
 		<property>rgccd.ccdDirectory</property>
    		<description>Directory to write ccds
    		</description>
 	</globalProperty>
+	
+	<globalProperty>
+        <property>rgccd.mrnServiceUrl</property>
+        <description>URL to the MRN CCD Service.
+        </description>
+    </globalProperty>
+    
+    <globalProperty>
+        <property>rgccd.hl7ServiceUrl</property>
+        <description>URL to the HL7 CCD Service.
+        </description>
+    </globalProperty>
 	
 	<!-- Internationalization -->
 	<!-- All message codes should start with moduleId.* -->

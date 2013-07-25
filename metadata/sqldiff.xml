@@ -13,4 +13,17 @@
 			   calling this script
 	</help>
 	
+	<diff>
+        <version>1.1.0</version>
+        <author>Steve McKee</author>
+        <date>Feb 12, 2013</date>
+        <description>
+        Removed unused global properties
+        </description>
+        <sql>
+        delete from global_property where property = 'rgccd.truststore';
+        delete from global_property where property = 'rgccd.truststorepassword';
+        </sql>
+    </diff>
+	
  </sqldiff>

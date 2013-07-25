@@ -7,7 +7,7 @@ import org.apache.commons.logging.LogFactory;
 import org.openmrs.GlobalProperty;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.Activator;
+import org.openmrs.module.BaseModuleActivator;
 import org.openmrs.module.chirdlutil.util.Util;
 
 /**
@@ -16,14 +16,14 @@ import org.openmrs.module.chirdlutil.util.Util;
  * 
  * @author Tammy Dugan
  */
-public class CCDActivator implements Activator {
+public class CCDActivator extends BaseModuleActivator {
 
 	private Log log = LogFactory.getLog(this.getClass());
 	
 	/**
-	 * @see org.openmrs.module.Activator#startup()
+	 * @see org.openmrs.module.BaseModuleActivator#started()
 	 */
-	public void startup() {
+	public void started() {
 		try
 		{
 			this.log.info("Starting CCD Module");
@@ -31,8 +31,8 @@ public class CCDActivator implements Activator {
 			AdministrationService adminService = Context
 					.getAdministrationService();
 			Context.authenticate(adminService
-					.getGlobalProperty("scheduler.username"), adminService
-					.getGlobalProperty("scheduler.password"));
+				.getGlobalProperty("scheduler.username"), adminService
+				.getGlobalProperty("scheduler.password"));
 			Iterator<GlobalProperty> properties = adminService
 					.getAllGlobalProperties().iterator();
 			GlobalProperty currProperty = null;
@@ -64,9 +64,9 @@ public class CCDActivator implements Activator {
 	}
 	
 	/**
-	 *  @see org.openmrs.module.Activator#shutdown()
+	 * @see org.openmrs.module.BaseModuleActivator#stopped()
 	 */
-	public void shutdown() {
+	public void stopped() {
 		this.log.info("Shutting down CCD Module");
 	}
 	

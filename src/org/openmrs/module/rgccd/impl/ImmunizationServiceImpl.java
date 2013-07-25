@@ -10,7 +10,9 @@ import org.apache.axis2.AxisFault;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.module.chirdlutil.util.XMLUtil;
-import org.openmrs.module.rgccd.Immunization;
+import org.openmrs.module.rgccd.ImmunizationForecast;
+import org.openmrs.module.rgccd.ImmunizationPrevious;
+import org.openmrs.module.rgccd.ImmunizationQueryOutput;
 import org.openmrs.module.rgccd.db.ImmunizationDAO;
 import org.openmrs.module.rgccd.service.ImmunizationService;
 import org.w3c.dom.Document;
@@ -80,8 +82,8 @@ public class ImmunizationServiceImpl implements ImmunizationService {
 	 * into an immunization list
 	 * @see org.openmrs.module.rgccd.service.ImmunizationService#createImmunizationList(java.lang.String, java.lang.String)
 	 */
-	public List<Immunization> createImmunizationList(String immunizationListString, String mrn) {
-		List<Immunization> immunizations = new ArrayList<Immunization>();
+	public ImmunizationQueryOutput createImmunizationList(String immunizationListString, String mrn) {
+		ImmunizationQueryOutput immunizations = new ImmunizationQueryOutput();
 		
 		if (immunizationListString == null) {
 			log.info("immunization list is null for mrn: " + mrn + " so immunization list could not be created");
@@ -90,16 +92,16 @@ public class ImmunizationServiceImpl implements ImmunizationService {
 		
 		try {
 			
-			// Also try to get the DOM built from the original file
 			InputStream transformInput = new ByteArrayInputStream(immunizationListString.getBytes());
 			
 			Document doc = XMLUtil.parseXMLFromInputStream(transformInput);
 			
+			//parse out the forecasted immunizations
 			NodeList tblOutputs = doc.getElementsByTagName("tbl_output");
 			
 			for (int i = 0; i < tblOutputs.getLength(); i++) {
-				Immunization immunization = new Immunization();
-				immunizations.add(immunization);
+				ImmunizationForecast immunization = new ImmunizationForecast();
+				immunizations.addImmunizationForecast(immunization);
 				Node currNode = tblOutputs.item(i);
 								
 				if (currNode.getNodeType() == Node.ELEMENT_NODE) {
@@ -111,7 +113,7 @@ public class ImmunizationServiceImpl implements ImmunizationService {
 								if (currChild.getNodeType() == Node.ELEMENT_NODE) {
 									Element childElement = (Element) currChild;
 									if (childElement.getNodeName().equals("Vaccine")) {
-										immunization.setVaccine(childElement.getTextContent());
+										immunization.setVaccineName(childElement.getTextContent());
 									}
 									if (childElement.getNodeName().equals("Dose")) {
 										try {
@@ -130,15 +132,53 @@ public class ImmunizationServiceImpl implements ImmunizationService {
 								}
 							}
 				}
-			}													
+			}		
+			
+			//parse out the previous immunizations
+			NodeList tblInputs = doc.getElementsByTagName("tbl_input");
+			
+			for (int i = 0; i < tblInputs.getLength(); i++) {
+				ImmunizationPrevious immunization = new ImmunizationPrevious();
+				immunizations.addImmunizationPrevious(immunization);
+				Node currNode = tblInputs.item(i);
+								
+				if (currNode.getNodeType() == Node.ELEMENT_NODE) {
+						Element currElement = (Element) currNode;
+						NodeList children = currElement.getChildNodes();
+							
+							for (int k = 0; k < children.getLength(); k++) {
+								Node currChild = children.item(k);
+								if (currChild.getNodeType() == Node.ELEMENT_NODE) {
+									Element childElement = (Element) currChild;
+									if (childElement.getNodeName().equals("mapped_term")) {
+										immunization.setVaccineName(childElement.getTextContent());
+									}
+									if (childElement.getNodeName().equals("Vacc_dose")) {
+										try {
+	                                        immunization.setDose(Integer.parseInt(childElement.getTextContent()));
+                                        }
+                                        catch (Exception e) {
+                                        }
+									}
+									if (childElement.getNodeName().equals("patientID")) {
+										try {
+	                                        immunization.setPatientId(Integer.parseInt(childElement.getTextContent()));
+                                        }
+                                        catch (Exception e) {
+                                        }
+									}
+									if (childElement.getNodeName().equals("vacc_date")) {
+										immunization.setDate(childElement.getTextContent());
+									}
+								}
+							}
+				}
+			}
 		}
 		catch (Exception e) {
 			e.printStackTrace();
 		}
 		
-		if (immunizations.size() == 0) {
-			log.info("No immunizations found for mrn: " + mrn);
-		} 
 		return immunizations;
 	}
 		
